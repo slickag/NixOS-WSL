@@ -52,7 +52,7 @@ let
     cp ${./configuration.nix} ./etc/nixos/configuration.nix
     cp ${./syschdemd.nix} ./etc/nixos/syschdemd.nix
     cp ${./syschdemd.sh} ./etc/nixos/syschdemd.sh
-    cp -LR ${config.boot.wsl.etcNixos}/* ./etc/nixos
+    # cp -LR ${config.boot.wsl.etcNixos}/* ./etc/nixos
   '';
 in
 {
@@ -61,7 +61,7 @@ in
       A directory to recursively copy into /etc/nixos within the tarball.
     '';
     type = types.path;
-    default = lib.cleanSource ./etcNixos;
+    default = lib.cleanSource ./.;
   };
   config = {
     system.build.tarball = pkgs.callPackage "${nixpkgs}/nixos/lib/make-system-tarball.nix" {
