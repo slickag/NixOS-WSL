@@ -17,19 +17,7 @@ in
       default = "nixos";
     };
   };
-  config = mkIf cfg.enable {  nixpkgs.config.allowUnfree = true;
-
-    nix = {
-      autoOptimiseStore = true;
-      gc.automatic = true;
-      package = pkgs.nixUnstable;
-      trustedUsers = [ "root" "${cfg.user}" ];
-      extraOptions = ''
-       # gc-keep-outputs = true
-       experimental-features = nix-command flakes
-      '';
-    };
-
+  config = mkIf cfg.enable {
     # WSL is closer to a container than anything else
     boot.isContainer = true;
 
