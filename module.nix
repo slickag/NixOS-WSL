@@ -8,19 +8,6 @@ let
   };
 in
 {
-
-  nix = {
-    autoOptimiseStore = true;
-    gc.automatic = true;
-    package = pkgs.nixUnstable;
-    trustedUsers = [ "${cfg.user}" ];
-    extraOptions = ''
-      experimental-features = nix-command flakes ca-references
-      builders-use-substitutes = true
-    '';
-    distributedBuilds = true;
-  };
-
   imports = [ "${modulesPath}/profiles/minimal.nix" ./build-tarball.nix ];
 
   options.boot.wsl = {
@@ -31,6 +18,17 @@ in
     };
   };
   config = mkIf cfg.enable {
+    nix = {
+      autoOptimiseStore = true;
+      gc.automatic = true;
+      package = pkgs.nixUnstable;
+      trustedUsers = [ "${cfg.user}" ];
+      extraOptions = ''
+        experimental-features = nix-command flakes ca-references
+        builders-use-substitutes = true
+      '';
+      distributedBuilds = true;
+    };
     # WSL is closer to a container than anything else
     boot.isContainer = true;
     boot.enableContainers = true;
