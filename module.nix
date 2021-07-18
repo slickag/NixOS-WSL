@@ -8,7 +8,7 @@ let
   };
 in
 {
-  imports = [ ./build-tarball.nix ];
+  imports = [ "${modulesPath}/profiles/minimal.nix" ./build-tarball.nix ];
 
   options.boot.wsl = {
     enable = mkEnableOption "Windows WSL support";
@@ -42,6 +42,7 @@ in
       curl
       exa
       lsd
+      man
       fd
       fzf
       iptables
@@ -51,18 +52,15 @@ in
       wget
       zip
       zsh
-      dos2unix
-      tmux
-      screen
     ];
 
     programs = {
+      # mtr.enable = true;
       zsh = {
         enable = true;
         enableCompletion = true;
       };
       bash.enableCompletion = true;
-      fuse.userAllowOther = true;
     };
 
     services = {
@@ -81,6 +79,7 @@ in
 
     boot.cleanTmpDir = true;
     boot.tmpOnTmpfs = true;
+
     environment.etc.hosts.enable = false;
     environment.etc."resolv.conf".enable = false;
 
@@ -109,19 +108,7 @@ in
     environment.etc."wsl.conf" = {
       text = ''
         [automount]
-        enabled = true
-        options = "metadata,uid=1000,gid=100,umask=0022,fmask=11,case=off"
-        crossDistro = true
-
-        [network]
-        hostname = NIXOS
-
-        [interop]
-        enabled = true
-        appendwindowspath = true
-
-        [filesystem]
-        umask = 0022
+        options = "metadata"
       '';
     };
 
