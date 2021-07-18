@@ -71,6 +71,7 @@ in
       printing.enable = false;
 
       journald.extraConfig = ''
+        MaxRetentionSec=1week
         SystemMaxUse=200M
       '';
     };
@@ -78,7 +79,6 @@ in
     # Set your time zone.
     time.timeZone = "America/Phoenix";
 
-    services.journald.extraConfig = "MaxRetentionSec=1week";
     boot.cleanTmpDir = true;
     boot.tmpOnTmpfs = true;
 
