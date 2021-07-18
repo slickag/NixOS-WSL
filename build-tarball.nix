@@ -58,7 +58,7 @@ in
       A directory to recursively copy into /etc/nixos within the tarball.
     '';
     type = types.path;
-    default = lib.cleanSource ./.;
+    default = lib.cleanSource ./etcNixos;
   };
   config = {
     system.build.tarball = pkgs.callPackage "${nixpkgs}/nixos/lib/make-system-tarball.nix" {
