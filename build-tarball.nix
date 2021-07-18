@@ -49,10 +49,7 @@ let
 
     # Copy the system configuration
     mkdir -p ./etc/nixos
-    cp ${./configuration.nix} ./etc/nixos/configuration.nix
-    cp ${./syschdemd.nix} ./etc/nixos/syschdemd.nix
-    cp ${./syschdemd.sh} ./etc/nixos/syschdemd.sh
-    # cp -LR ${config.boot.wsl.etcNixos}/* ./etc/nixos
+    cp -LR ${config.boot.wsl.etcNixos}/* ./etc/nixos
   '';
 in
 {

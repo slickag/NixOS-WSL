@@ -8,6 +8,19 @@ let
   };
 in
 {
+
+  nix = {
+    autoOptimiseStore = true;
+    gc.automatic = true;
+    package = pkgs.nixUnstable;
+    trustedUsers = [ "${cfg.user}" ];
+    extraOptions = ''
+      experimental-features = nix-command flakes ca-references
+      builders-use-substitutes = true
+    '';
+    distributedBuilds = true;
+  };
+
   imports = [ "${modulesPath}/profiles/minimal.nix" ./build-tarball.nix ];
 
   options.boot.wsl = {
@@ -20,15 +33,70 @@ in
   config = mkIf cfg.enable {
     # WSL is closer to a container than anything else
     boot.isContainer = true;
+    boot.enableContainers = true;
+
+    environment.systemPackages = with pkgs; [
+      nixFlakes
+      git
+      bat
+      binutils
+      coreutils
+      curl
+      exa
+      lsd
+      man
+      fd
+      fzf
+      iptables
+      procs
+      unzip
+      vim
+      wget
+      zip
+      zsh
+    ];
+
+    programs = {
+      # mtr.enable = true;
+      zsh = {
+        enable = true;
+        enableCompletion = true;
+      };
+      bash.enableCompletion = true;
+    };
+
+    services = {
+      samba.enable = false;
+      blueman.enable = false;
+      printing.enable = false;
+
+      journald.extraConfig = ''
+        SystemMaxUse=200M
+      '';
+    };
+
+    # Set your time zone.
+    time.timeZone = "America/Phoenix";
+
+    services.journald.extraConfig = "MaxRetentionSec=1week";
+    boot.cleanTmpDir = true;
+    boot.tmpOnTmpfs = true;
 
     environment.etc.hosts.enable = false;
     environment.etc."resolv.conf".enable = false;
 
     networking.dhcpcd.enable = false;
 
+    system.autoUpgrade.enable = true;
+    system.autoUpgrade.allowReboot = false;
+    system.autoUpgrade.channel = https://nixos.org/channels/nixos-unstable;
+
+    users.mutableUsers = true;
     users.users.${cfg.user} = {
       isNormalUser = true;
-      extraGroups = [ "wheel" "networkmanager" "audio" "video" "plugdev" "kvm" "cdrom" ];
+      uid = 1000;
+      group = "users";
+      extraGroups = [ "wheel" "lp" "docker" "networkmanager" "audio" "video" "plugdev" "kvm" "cdrom" "bluetooth" ];
     };
 
     users.users.root = {
@@ -38,6 +106,13 @@ in
     };
 
     security.sudo.wheelNeedsPassword = false;
+
+    environment.etc."wsl.conf" = {
+      text = ''
+        [automount]
+        options = "metadata"
+      '';
+    };
 
     # Disable systemd units that don't make sense on WSL
     systemd.services."serial-getty@ttyS0".enable = false;
