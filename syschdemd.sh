@@ -18,8 +18,8 @@ fi
 if [ ! -e "/run/systemd.pid" ]; then
     PATH=/run/current-system/systemd/lib/systemd:@fsPackagesPath@ \
         LOCALE_ARCHIVE=/run/current-system/sw/lib/locale/locale-archive \
-        @daemonize@/bin/daemonize /run/current-system/sw/bin/unshare -fp --mount-proc systemd
-    /run/current-system/sw/bin/pgrep -xf systemd > /run/systemd.pid
+        @daemonize@/bin/daemonize /run/current-system/sw/bin/unshare -fp --mount-proc systemd --system-unit=basic.target
+    /run/current-system/sw/bin/pgrep -xf "systemd --system-unit=basic.target" > /run/systemd.pid
 
     # Wait for systemd to start
     status=1
@@ -40,4 +40,4 @@ if [[ $# -gt 0 ]]; then
 else
     cmd="$userShell --login"
 fi
-exec $sw/nsenter -t $(< /run/systemd.pid) -p -m -- $sw/machinectl -q --uid=@defaultUser@ shell .host /bin/sh -c "cd \"$PWD\"; exec $cmd"
+exec $sw/nsenter -t $(< /run/systemd.pid) -p -m -- $sw/machinectl -q --uid=@defaultUser@ -E WSL_INTEROP=$WSL_INTEROP -E WSL_DISTRO_NAME=$WSL_DISTRO_NAME -E WSLENV=$WSLENV -E DISPLAY=$DISPLAY -E WAYLAND_DISPLAY=$WAYLAND_DISPLAY -E PULSE_SERVER=$PULSE_SERVER shell .host /bin/sh -c "cd \"$PWD\"; exec $cmd"
