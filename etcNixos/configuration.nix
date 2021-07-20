@@ -5,11 +5,12 @@ let
     inherit lib pkgs config;
     defaultUser = "slick";
   };
-#  wsl_drop_cache = import ./services/wsl_drop_cache.nix {
-#    inherit lib pkgs config;
-#  };
+  #  wsl_drop_cache = import ./services/wsl_drop_cache.nix {
+  #    inherit lib pkgs config;
+  #  };
 in
-{  nixpkgs.config.allowUnfree = true;
+{
+  nixpkgs.config.allowUnfree = true;
 
   imports = [ ./services/wslg-xwayland.nix ]; #./services/wsl-drop-cache.nix ]; #[ "${modulesPath}/profiles/minimal.nix" ];
   nix = {
@@ -55,8 +56,8 @@ in
   ];
 
   #fonts = {
-    #enableDefaultFonts = true;
-    #fonts = [ pkgs.nerdfonts ];
+  #enableDefaultFonts = true;
+  #fonts = [ pkgs.nerdfonts ];
   #};
   programs = {
     # mtr.enable = true;

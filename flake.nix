@@ -15,23 +15,22 @@
         ];
         specialArgs = { inherit nixpkgs; };
       };
-    } //
-    flake-utils.lib.eachDefaultSystem (system:
-      let
-        pkgs = import nixpkgs { inherit system; };
-      in
-      {
-        checks.check-format = pkgs.runCommand "check-format"
-          {
-            buildInputs = with pkgs; [ nixpkgs-fmt ];
-          } ''
-          nixpkgs-fmt --check ${./.}
-          mkdir $out # success
-        '';
-
-        devShell = pkgs.mkShell {
-          nativeBuildInputs = with pkgs; [ nixpkgs-fmt ];
-        };
-      }
-    );
+    };
+    # flake-utils.lib.eachDefaultSystem (system:
+    #   let
+    #     pkgs = import nixpkgs { inherit system; };
+    #   in
+    #   {
+        # checks.check-format = pkgs.runCommand "check-format"
+        #   {
+        #     buildInputs = with pkgs; [ nixpkgs-fmt ];
+        #   } ''
+        #   nixpkgs-fmt --check ${./.}
+        #   mkdir $out # success
+        # '';
+        # devShell = pkgs.mkShell {
+        #   nativeBuildInputs = with pkgs; [ nixpkgs-fmt ];
+        # };
+    #   }
+    # );
 }

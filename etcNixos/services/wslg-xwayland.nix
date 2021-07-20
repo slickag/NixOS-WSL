@@ -1,4 +1,4 @@
-{config, pkgs, lib, ...}:
+{ config, pkgs, lib, ... }:
 
 let
   cfg = config.services.wslg-xwayland;
@@ -14,13 +14,13 @@ with lib;
         type = with types; bool;
         description = ''
           Enable WSL2 Wayland service/socket.
-	'';
+        '';
       };
     };
   };
   config = mkIf cfg.enable {
     systemd.services.wslg-xwayland = {
-      wantedBy = [ "multi-user.target" ]; 
+      wantedBy = [ "multi-user.target" ];
       after = [ "wslg-xwayland.socket" ];
       description = "Enables WSL2 Wayland capabilities.";
       serviceConfig = {
