@@ -42,6 +42,7 @@ in
       curl
       exa
       lsd
+      man
       fd
       fzf
       iptables
@@ -54,6 +55,9 @@ in
       dos2unix
       tmux
       screen
+      wslu
+      wsl-open
+      socat
     ];
 
     programs = {
@@ -83,7 +87,6 @@ in
     boot.tmpOnTmpfs = true;
     environment.etc.hosts.enable = false;
     environment.etc."resolv.conf".enable = false;
-
     networking.dhcpcd.enable = false;
 
     system.autoUpgrade.enable = true;
@@ -95,6 +98,7 @@ in
       isNormalUser = true;
       uid = 1000;
       group = "users";
+      shell = pkgs.zsh;
       extraGroups = [ "wheel" "lp" "docker" "networkmanager" "audio" "video" "plugdev" "kvm" "cdrom" "bluetooth" ];
     };
 
@@ -123,6 +127,23 @@ in
         [filesystem]
         umask = 0022
       '';
+    };
+
+    environment.shellAliases = {
+      diff = "diff --color=auto";
+      exa = "exa -ga --group-directories-first --time-style=long-iso --color-scale";
+      l = "ls -l $*";
+      ll = "lsd -AFl --group-dirs first --total-size $*";
+      ls = "exa -ahHF $*";
+      lt = "ls -T $*";
+      tree = "tree -a -I .git --dirsfirst $*";
+      nixos-rebuild = "sudo nixos-rebuild $*";
+      which-command = "whence";
+    };
+
+    systemd.services."user-runtime-dir@".serviceConfig = lib.mkOverride 0 {
+      ExecStart = ''/run/wrappers/bin/mount --bind /mnt/wslg/runtime-dir /run/user/%i'';
+      ExecStop = ''/run/wrappers/bin/umount /run/user/%i'';
     };
 
     # Disable systemd units that don't make sense on WSL
