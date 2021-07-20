@@ -25,7 +25,7 @@
           {
             buildInputs = with pkgs; [ nixpkgs-fmt ];
           } ''
-          nixpkgs-fmt --check ${.}
+          nixpkgs-fmt --check ${./.}
           mkdir $out # success
         '';
 
