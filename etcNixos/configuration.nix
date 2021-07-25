@@ -90,6 +90,7 @@ in
   users.mutableUsers = true;
   users.users.${cfg.user} = {
     isNormalUser = true;
+    initialHashedPassword = "";
     uid = 1000;
     group = "users";
     shell = pkgs.zsh;
@@ -98,6 +99,7 @@ in
 
   users.users.root = {
     shell = "${syschdemd}/bin/syschdemd";
+    initialHashedPassword = "";
     # Otherwise WSL fails to login as root with "initgroups failed 5"
     extraGroups = [ "root" ];
   };
@@ -114,7 +116,7 @@ in
         crossDistro = true
 
         [network]
-        hostname = NIXOS
+        hostname = nixos
 
         [interop]
         enabled = true
@@ -124,7 +126,7 @@ in
         umask = 0022
 
         [boot]
-        command = "/usr/bin/env -i /bin/sh - c 'if [ ! -e /run/current-system ]; then LANG=C.UTF-8 /nix/var/nix/profiles/system/activate; fi'"
+        command = "/bin/sh - c '[ ! -e /run/current-system ] && LANG=C.UTF-8 /nix/var/nix/profiles/system/activate'"
       '';
     };
     "ld.so.conf.d/ld.wsl.conf" = {
@@ -157,15 +159,14 @@ in
     "serial-getty@hvc0.service"
     "getty@tty1.service"
     "autovt@.service"
+    "systemd-udev-settle.service"
     "systemd-udev-trigger.service"
     "systemd-udevd.service"
+    "systemd-udevd-control.socket"
+    "systemd-udevd-kernel.socket"
     "sys-kernel-debug.mount"
-    "console-getty.service"
-    "container-getty@.service"
-    "getty@.service"
-    "serial-getty@.service"
-    "getty-pre.target"
-    "getty.target"
+    "ssh-agent.service"
+    "gpg-agent.service"
   ];
 
   systemd.services.firewall.enable = false;

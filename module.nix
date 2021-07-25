@@ -97,6 +97,7 @@ in
     users.mutableUsers = true;
     users.users.${cfg.user} = {
       isNormalUser = true;
+      initialHashedPassword = "";
       uid = 1000;
       group = "users";
       shell = pkgs.zsh;
@@ -105,6 +106,7 @@ in
 
     users.users.root = {
       shell = "${syschdemd}/bin/syschdemd";
+      initialHashedPassword = "";
       # Otherwise WSL fails to login as root with "initgroups failed 5"
       extraGroups = [ "root" ];
     };
