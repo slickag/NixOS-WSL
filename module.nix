@@ -129,8 +129,9 @@ in
 
           [filesystem]
           umask = 0022
+
           [boot]
-          command = "[ ! -e /run/current-system ] && LANG=C.UTF-8 /nix/var/nix/profiles/system/activate"
+          command = "/usr/bin/env -i /bin/sh -c 'if [ ! -e /run/current-system ]; then LANG=C.UTF-8 /nix/var/nix/profiles/system/activate; fi'"
         '';
       };
       "ld.so.conf.d/ld.wsl.conf" = {
@@ -166,6 +167,12 @@ in
       "systemd-udev-trigger.service"
       "systemd-udevd.service"
       "sys-kernel-debug.mount"
+      "console-getty.service"
+      "container-getty@.service"
+      "getty@.service"
+      "serial-getty@.service"
+      "getty-pre.target"
+      "getty.target"
     ];
     systemd.services.firewall.enable = false;
     systemd.services.systemd-resolved.enable = false;
