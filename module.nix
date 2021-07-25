@@ -132,6 +132,7 @@ in
           [boot]
           command = "[ ! -e /run/current-system ] && LANG=C.UTF-8 /nix/var/nix/profiles/system/activate"
         '';
+      };
       "ld.so.conf.d/ld.wsl.conf" = {
         mode = "0644";
         text = ''
