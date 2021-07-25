@@ -1,5 +1,5 @@
 { ... }: {
   boot.wsl.enable = true;
-  boot.wsl.user = "slick";
+  boot.wsl.user = "nixos";
   boot.wsl.etcNixos = ./etcNixos;
 }

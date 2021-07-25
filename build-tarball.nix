@@ -50,6 +50,7 @@ let
     # Copy the system configuration
     mkdir -p ./etc/nixos
     cp -LR ${config.boot.wsl.etcNixos}/* ./etc/nixos
+    chmod -R 0644 ./etc/nixos/
   '';
 in
 {
