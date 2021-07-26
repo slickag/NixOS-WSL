@@ -29,16 +29,20 @@ with lib;
       unitConfig = {
         Requires = "wslg-xwayland.socket";
         After = "wslg-xwayland.socket";
+        ConditionVirtualization = "wsl";
+        ConditionPathExists = "/mnt/wslg/.X11-unix/X0";
       };
     };
     systemd.sockets.wslg-xwayland = {
       wantedBy = [ "multi-user.target" ];
       after = [ "systemd-tmpfiles-setup.service" ];
       requires = [ "systemd-tmpfiles-setup.service" ];
-      listenStreams = [
-        "/tmp/.X11-unix/X0"
-      ];
+      listenStreams = [ "/tmp/.X11-unix/X0" ];
       wants = [ "wslg-xwayland.service" ];
+      unitConfig = {
+        ConditionVirtualization = "wsl";
+        ConditionPathExists = "/mnt/wslg/.X11-unix/X0";
+      };
     };
     systemd.services."user-runtime-dir@".serviceConfig = lib.mkOverride 0 {
       ExecStart = ''/run/wrappers/bin/mount --bind /mnt/wslg/runtime-dir /run/user/%i'';

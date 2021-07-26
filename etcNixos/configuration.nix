@@ -112,7 +112,7 @@ in
       text = ''
         [automount]
         enabled = true
-        options = "metadata,uid=1000,gid=100,umask=0022,fmask=11,case=off"
+        options = "metadata"
         crossDistro = true
 
         [network]
@@ -122,11 +122,12 @@ in
         enabled = true
         appendWindowsPath = true
 
-        [filesystem]
-        umask = 0022
-
         [boot]
-        command = "/bin/sh - c '[ ! -e /run/current-system ] && LANG=C.UTF-8 /nix/var/nix/profiles/system/activate'"
+        command = "[ ! -e /run/current-system ] && LANG=C.UTF-8 /nix/var/nix/profiles/system/activate; PATH=${pkgs.systemd}/lib/systemd:$PATH \
+                  /run/current-system/sw/bin/unshare --fork --mount-proc --pid --propagation shared -- /bin/sh -c '
+                  /nix/var/nix/profiles/system/sw/bin/mount -t binfmt_misc binfmt_misc /proc/sys/fs/binfmt_misc
+                  exec systemd --unit=multi-user.target
+                  ' &"
       '';
     };
     "ld.so.conf.d/ld.wsl.conf" = {
