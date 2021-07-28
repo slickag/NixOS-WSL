@@ -123,7 +123,7 @@ in
           extraGroups = [ "wheel" "lp" "docker" "networkmanager" "audio" "video" "plugdev" "kvm" "cdrom" "bluetooth" ];
         };
         root = {
-          shell = "${defaultUser}/bin/syschdemd";
+          shell = "${syschdemd}/bin/syschdemd";
           initialHashedPassword = "";
           # Otherwise WSL fails to login as root with "initgroups failed 5"
           extraGroups = [ "root" ];
