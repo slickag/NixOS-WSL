@@ -104,7 +104,7 @@ in
 
     networking.dhcpcd.enable = false;
     powerManagement.enable = false;
-    
+
     system.autoUpgrade = {
       enable = true;
       allowReboot = false;
