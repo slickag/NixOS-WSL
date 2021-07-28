@@ -17,6 +17,7 @@ in
       default = "nixos";
     };
   };
+
   config = mkIf cfg.enable {
     nix = {
       autoOptimiseStore = true;
@@ -29,9 +30,12 @@ in
       '';
       distributedBuilds = true;
     };
+
     # WSL is closer to a container than anything else
     boot.isContainer = true;
     boot.enableContainers = true;
+    boot.cleanTmpDir = true;
+    boot.tmpOnTmpfs = true;
 
     environment.systemPackages = with pkgs; [
       nixFlakes
@@ -48,25 +52,34 @@ in
       iptables
       procs
       unzip
-      vim
       wget
       zip
       zsh
       dos2unix
-      tmux
       screen
       wslu
       wsl-open
+      bc
       socat
+      rclone
+      xclip
+      aria2
     ];
 
     programs = {
       zsh = {
         enable = true;
         enableCompletion = true;
+        autosuggestions.enable = true;
+        setOptions = [ "EXTENDED_HISTORY" ];
       };
       bash.enableCompletion = true;
+      command-not-found.enable = true;
+      dconf.enable = true;
+      mtr.enable = true;
       fuse.userAllowOther = true;
+      tmux.enable = true;
+      xwayland.enable = true;
     };
 
     services = {
@@ -74,7 +87,6 @@ in
       blueman.enable = false;
       printing.enable = false;
       wslg-xwayland.enable = true;
-
       journald.extraConfig = ''
         MaxRetentionSec=1week
         SystemMaxUse=200M
@@ -84,42 +96,53 @@ in
     # Set your time zone.
     time.timeZone = "America/Phoenix";
 
-    boot.cleanTmpDir = true;
-    boot.tmpOnTmpfs = true;
-    environment.etc.hosts.enable = false;
-    environment.etc."resolv.conf".enable = false;
-    networking.dhcpcd.enable = false;
-
-    system.autoUpgrade.enable = true;
-    system.autoUpgrade.allowReboot = false;
-    system.autoUpgrade.channel = https://nixos.org/channels/nixos-unstable;
-
-    users.mutableUsers = true;
-    users.users.${cfg.user} = {
-      isNormalUser = true;
-      initialHashedPassword = "";
-      uid = 1000;
-      group = "users";
-      shell = pkgs.zsh;
-      extraGroups = [ "wheel" "lp" "docker" "networkmanager" "audio" "video" "plugdev" "kvm" "cdrom" "bluetooth" ];
+    # Select internationalisation properties.
+    i18n.defaultLocale = "en_US.UTF-8";
+    console = {
+      keyMap = "us";
     };
 
-    users.users.root = {
-      shell = "${syschdemd}/bin/syschdemd";
-      initialHashedPassword = "";
-      # Otherwise WSL fails to login as root with "initgroups failed 5"
-      extraGroups = [ "root" ];
+    networking.dhcpcd.enable = false;
+    powerManagement.enable = false;
+    
+    system.autoUpgrade = {
+      enable = true;
+      allowReboot = false;
+      channel = https://nixos.org/channels/nixos-unstable;
+    };
+
+    users = {
+      mutableUsers = true;
+      users = {
+        ${cfg.user} = {
+          isNormalUser = true;
+          initialHashedPassword = "";
+          uid = 1000;
+          group = "users";
+          shell = pkgs.zsh;
+          extraGroups = [ "wheel" "lp" "docker" "networkmanager" "audio" "video" "plugdev" "kvm" "cdrom" "bluetooth" ];
+        };
+        root = {
+          shell = "${defaultUser}/bin/syschdemd";
+          initialHashedPassword = "";
+          # Otherwise WSL fails to login as root with "initgroups failed 5"
+          extraGroups = [ "root" ];
+        };
+      };
     };
 
     security.sudo.wheelNeedsPassword = false;
+    security.sudo.execWheelOnly = true;
 
     environment.etc = {
+      hosts.enable = false;
+      "resolv.conf".enable = false;
       "wsl.conf" = {
         mode = "0644";
         text = ''
           [automount]
           enabled = true
-          options = "metadata"
+          options = "metadata,uid=1000,gid=100,umask=0022,fmask=11,case=dir"
           crossDistro = true
 
           [network]
@@ -129,12 +152,8 @@ in
           enabled = true
           appendwindowspath = true
 
-          [boot]
-          command = "[ ! -e /run/current-system ] && LANG=C.UTF-8 /nix/var/nix/profiles/system/activate; PATH=${pkgs.systemd}/lib/systemd:$PATH \
-                    /run/current-system/sw/bin/unshare --fork --mount-proc --pid --propagation shared -- /bin/sh -c '
-                    /nix/var/nix/profiles/system/sw/bin/mount -t binfmt_misc binfmt_misc /proc/sys/fs/binfmt_misc
-                    exec systemd --unit=multi-user.target
-                    ' &"
+          [filesystem]
+          umask = 0022
         '';
       };
       "ld.so.conf.d/ld.wsl.conf" = {
@@ -148,36 +167,47 @@ in
       };
     };
 
-    environment.shellAliases = {
-      diff = "diff --color=auto";
-      exa = "exa -gahHF@ --group-directories-first --time-style=long-iso --color-scale --icons --git";
-      l = "exa -l $*";
-      ll = "lsd -AFl --group-dirs first --total-size $*";
-      ls = "exa -lG $*";
-      lt = "exa -T $*";
-      tree = "tree -a -I .git --dirsfirst $*";
-      nixos-rebuild = "sudo nixos-rebuild $*";
-      which-command = "whence";
+    environment = {
+      shellInit = ''
+        export PATH=$PATH:/bin:/sbin:/usr/lib/wsl/lib
+      '';
+      shellAliases = {
+        diff = "diff --color=auto";
+        exa = "exa -gahHF@ --group-directories-first --time-style=long-iso --color-scale --icons --git";
+        l = "exa -l";
+        ll = "lsd -AFl --group-dirs first --total-size";
+        ls = "exa -lG";
+        lt = "exa -T";
+        tree = "tree -a -I .git --dirsfirst";
+        nixos-rebuild = "sudo nixos-rebuild";
+        which-command = "whence";
+      };
     };
-
 
     # Disable systemd units that don't make sense on WSL
     systemd.suppressedSystemUnits = [
-      "serial-getty@ttyS0.service"
-      "serial-getty@hvc0.service"
-      "getty@tty1.service"
       "autovt@.service"
+      "systemd-udev-settle.service"
       "systemd-udev-trigger.service"
       "systemd-udevd.service"
+      "systemd-udevd-control.socket"
+      "systemd-udevd-kernel.socket"
+      "systemd-networkd.service"
+      "systemd-networkd-wait-online.service"
+      "networkd-dispatcher.service"
+      "systemd-resolved.service"
+      "ModemManager.service"
+      "NetworkManager.service"
+      "NetworkManager-wait-online.service"
+      "pulseaudio.service"
+      "pulseaudio.socket"
       "sys-kernel-debug.mount"
-      "console-getty.service"
-      "container-getty@.service"
-      "getty@.service"
-      "serial-getty@.service"
-      "getty-pre.target"
-      "getty.target"
     ];
+
     systemd.services.firewall.enable = false;
+    systemd.services."serial-getty@ttyS0".enable = false;
+    systemd.services."serial-getty@hvc0".enable = false;
+    systemd.services."getty@tty1".enable = false;
     systemd.services.systemd-resolved.enable = false;
 
     # Don't allow emergency mode, because we don't have a console.
