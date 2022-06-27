@@ -15,13 +15,18 @@ with builtins; with lib;
       };
       automountOptions = mkOption {
         type = str;
-        default = "metadata,uid=1000,gid=100";
+        default = "metadata,uid=1000,gid=100,umask=22,fmask=11,case=dir";
         description = "Options to use when mounting windows drives";
       };
       defaultUser = mkOption {
         type = str;
         default = "nixos";
         description = "The name of the default user";
+      };
+      defaultHostname = mkOption {
+        type = str;
+        default = "NIXOS";
+        description = "The hostname of the WSL instance";
       };
       startMenuLaunchers = mkEnableOption "shortcuts for GUI applications in the windows start menu";
       wslConf = mkOption {
@@ -43,10 +48,16 @@ with builtins; with lib;
         };
       };
 
+      wslg = mkOption {
+        type = bool;
+        default = true;
+        description = "Fix user runtime mount so it points to /mnt/wslg/runtime-dir";
+      };
+
       compatibility = {
         interopPreserveArgvZero = mkOption {
           type = nullOr bool;
-          default = null;
+          default = true;
           description = ''
             Register binfmt interpreter for Windows executables with 'preserves argv[0]' flag.
 
@@ -67,16 +78,22 @@ with builtins; with lib;
 
       wsl.wslConf = {
         automount = {
-          enabled = true;
-          mountFsTab = true;
-          root = "${cfg.automountPath}/";
+          enabled = "true";
+          ldconfig = "false";
+          mountFsTab = "true";
           options = cfg.automountOptions;
+          root = "${cfg.automountPath}/";
+        };
+
+        network = {
+          hostname = "${cfg.defaultHostname}";
         };
       };
 
       # WSL is closer to a container than anything else
       boot = {
         isContainer = true;
+        enableContainers = true;
 
         binfmt.registrations = mkIf cfg.interop.register {
           WSLInterop =
@@ -115,6 +132,21 @@ with builtins; with lib;
         };
       };
 
+      environment.systemPackages = with pkgs; [
+        git
+        wget
+        fzf
+        unzip
+        zip
+        unrar
+        exa
+        lsd
+        wslu
+        wsl-open
+        aria2
+        tmux
+      ];
+
       environment.noXlibs = lib.mkForce false; # override xlibs not being installed (due to isContainer) to enable the use of GUI apps
       hardware.opengl.enable = true; # Enable GPU acceleration
 
@@ -130,20 +162,62 @@ with builtins; with lib;
           "resolv.conf".enable = false;
         };
 
-        systemPackages = [
-          (pkgs.runCommand "wslpath" { } ''
-            mkdir -p $out/bin
-            ln -s /init $out/bin/wslpath
-          '')
-        ];
+        shellAliases = {
+          diff = "diff --color=auto";
+          grep = "grep --color=auto --exclude-dir={.bzr,CVS,.git,.hg,.svn}";
+          exa = "exa -gahHF@ --group-directories-first --time-style=long-iso --color-scale --icons --git";
+          l = "ls -l";
+          ll = "lsd -AFl --group-dirs first --total-size";
+          ls = "exa -lG";
+          lt = "ls -T";
+          tree = "tree -aC -I .git --dirsfirst";
+        };
       };
+
+      # Set your time zone.
+      time.timeZone = "America/Phoenix";
+
+      # Select internationalisation properties.
+      i18n.defaultLocale = "en_US.UTF-8";
+
+      programs = {
+        zsh = {
+          enable = true;
+          enableCompletion = true;
+          autosuggestions.enable = true;
+          setOptions = [ "EXTENDED_HISTORY" ];
+        };
+        bash.enableCompletion = true;
+        command-not-found.enable = true;
+        fuse.userAllowOther = true;
+        tmux.enable = true;
+      };
+
+      services = {
+        samba.enable = false;
+        blueman.enable = false;
+        printing.enable = false;
+        journald.extraConfig = ''
+          MaxRetentionSec=1week
+          SystemMaxUse=200M
+        '';
+      };
+
+      systemPackages = [
+        (pkgs.runCommand "wslpath" { } ''
+          mkdir -p $out/bin
+          ln -s /init $out/bin/wslpath
+        '')
+      ];
+    };
 
       networking.dhcpcd.enable = false;
 
       users.users.${cfg.defaultUser} = {
         isNormalUser = true;
+        shell = pkgs.zsh;
         uid = 1000;
-        extraGroups = [ "wheel" ]; # Allow the default user to use sudo
+        extraGroups = [ "wheel" "lp" "docker" "networkmanager" "audio" "video" "plugdev" "kvm" "cdrom" "bluetooth" ]; # Allow the default user to use sudo
       };
 
       users.users.root = {
@@ -177,17 +251,53 @@ with builtins; with lib;
         '';
       };
 
-      # Disable systemd units that don't make sense on WSL
-      systemd.services."serial-getty@ttyS0".enable = false;
-      systemd.services."serial-getty@hvc0".enable = false;
-      systemd.services."getty@tty1".enable = false;
-      systemd.services."autovt@".enable = false;
+      systemd.services."user-runtime-dir@".serviceConfig = mkIf cfg.wslg (
+        lib.mkOverride 0 {
+          ExecStart = ''/run/wrappers/bin/mount --bind /mnt/wslg/runtime-dir /run/user/%i'';
+          ExecStop = ''/run/wrappers/bin/umount /run/user/%i'';
+        }
+      );
 
-      systemd.services.firewall.enable = false;
-      systemd.services.systemd-resolved.enable = false;
-      systemd.services.systemd-udevd.enable = false;
+      systemd = {
+        # Disable systemd units that don't make sense on WSL
+        services = {
+          "serial-getty@ttyS0".enable = false;
+          "serial-getty@hvc0".enable = false;
+          "getty@tty1".enable = false;
+          "autovt@".enable = false;
+          firewall.enable = false;
+          systemd-resolved.enable = false;
+          systemd-udevd.enable = false;
+          "user-runtime-dir@".serviceConfig = mkIf cfg.wslg (
+            lib.mkOverride 0 {
+              ExecStart = ''/run/wrappers/bin/mount --bind /mnt/wslg/runtime-dir /run/user/%i'';
+              ExecStop = ''/run/wrappers/bin/umount /run/user/%i'';
+            }
+          );
+        };
 
-      # Don't allow emergency mode, because we don't have a console.
-      systemd.enableEmergencyMode = false;
+        tmpfiles.rules = [
+          # Don't remove the X11 socket
+          "d /tmp/.X11-unix 1777 root root"
+        ];
+
+        suppressedSystemUnits = [
+          "systemd-networkd.service"
+          "systemd-networkd-wait-online.service"
+          "networkd-dispatcher.service"
+          "systemd-resolved.service"
+          "ModemManager.service"
+          "NetworkManager.service"
+          "NetworkManager-wait-online.service"
+          "pulseaudio.service"
+          "pulseaudio.socket"
+          "dirmngr.service"
+          "dirmngr.socket"
+          "sys-kernel-debug.mount"
+        ];
+
+        # Don't allow emergency mode, because we don't have a console.
+        enableEmergencyMode = false;
+      };
     };
 }
