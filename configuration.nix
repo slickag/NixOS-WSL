@@ -12,7 +12,7 @@ in
     enable = true;
     nativeSystemd = true;
     wslConf.automount.root = "/mnt";
-    wslConf.options = "metadata,uid=1000,gid=100,umask=22,fmask=11,case=dir";
+    wslConf.automount.options = "metadata,uid=1000,gid=100,umask=22,fmask=11,case=dir";
     defaultUser = "nixos";
     startMenuLaunchers = true;
 
