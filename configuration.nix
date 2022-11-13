@@ -13,7 +13,7 @@ in
     nativeSystemd = true;
     wslConf.automount.root = "/mnt";
     wslConf.automount.options = "metadata,uid=1000,gid=100,umask=22,fmask=11,case=dir";
-    wslConf.network.hostname = "NIXOS"
+    wslConf.network.hostname = "NIXOS";
     defaultUser = "nix";
     startMenuLaunchers = true;
 
