@@ -13,7 +13,8 @@ in
     nativeSystemd = true;
     wslConf.automount.root = "/mnt";
     wslConf.automount.options = "metadata,uid=1000,gid=100,umask=22,fmask=11,case=dir";
-    defaultUser = "nixos";
+    wslConf.network.hostname = "NIXOS"
+    defaultUser = "nix";
     startMenuLaunchers = true;
 
     # Enable native Docker support
@@ -23,6 +24,9 @@ in
     # docker-desktop.enable = true;
 
   };
+
+  home-manager.useGlobalPkgs = true;
+  home-manager.useUserPackages = true;
 
   # Enable nix flakes
   nixpkgs.config.allowUnfree = true;

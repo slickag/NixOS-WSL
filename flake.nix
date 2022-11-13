@@ -2,7 +2,8 @@
   description = "NixOS WSL";
 
   inputs = {
-    nixpkgs.url = "nixpkgs/nixos-22.05";
+    nixpkgs.url = "nixpkgs/nixos-unstable";
+    home-manager.url = "github:nix-community/home-manager";
     flake-utils.url = "github:numtide/flake-utils";
 
     flake-compat = {
@@ -11,7 +12,7 @@
     };
   };
 
-  outputs = { self, nixpkgs, flake-utils, ... }:
+  outputs = { self, nixpkgs, home-manager, flake-utils, ... }:
     {
 
       nixosModules.wsl = {
@@ -29,6 +30,7 @@
       nixosConfigurations.mysystem = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
         modules = [
+          home-manager.nixosModules.home-manager
           ./configuration.nix
         ];
       };
