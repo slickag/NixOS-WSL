@@ -30,10 +30,10 @@ in
 
   # Enable nix flakes
   nixpkgs.config.allowUnfree = true;
-  nix.autoOptimiseStore = true;
+  nix.settings.auto-optimise-store = true;
   nix.gc.automatic = true;
   nix.package = pkgs.nixFlakes;
-  nix.trustedUsers = [ "root" "$defaultUser" "@wheel" ];
+  nix.settings.trusted-users = [ "root" "$defaultUser" "@wheel" ];
   nix.extraOptions = ''
     experimental-features = nix-command flakes
   '';
