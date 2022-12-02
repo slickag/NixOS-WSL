@@ -51,11 +51,15 @@ with lib; {
 
           environment = {
 
-            etc = {
-              # DNS settings are managed by WSL
-              hosts.enable = !config.wsl.wslConf.network.generateHosts;
-              "resolv.conf".enable = !config.wsl.wslConf.network.generateResolvConf;
-            };
+            # Only set the options if the files are managed by WSL
+            etc = mkMerge [
+              (mkIf config.wsl.wslConf.network.generateHosts {
+                hosts.enable = false;
+              })
+              (mkIf config.wsl.wslConf.network.generateResolvConf {
+                "resolv.conf".enable = false;
+              })
+            ];
 
             systemPackages = [
               (pkgs.runCommand "wslpath" { } ''
@@ -75,6 +79,8 @@ with lib; {
 
           # Otherwise WSL fails to login as root with "initgroups failed 5"
           users.users.root.extraGroups = [ "root" ];
+
+          powerManagement.enable = false;
 
           security.sudo.wheelNeedsPassword = mkDefault false; # The default user will not have a password by default
 
@@ -99,12 +105,16 @@ with lib; {
           systemd = {
             # Disable systemd units that don't make sense on WSL
             services = {
+              # no virtual console to switch to
               "serial-getty@ttyS0".enable = false;
               "serial-getty@hvc0".enable = false;
               "getty@tty1".enable = false;
               "autovt@".enable = false;
               firewall.enable = false;
               systemd-resolved.enable = false;
+              # system clock cannot be changed
+              systemd-timesyncd.enable = false;
+              # no udev devices can be attached
               systemd-udevd.enable = false;
             };
 
@@ -120,9 +130,17 @@ with lib; {
           # Start a systemd user session when starting a command through runuser
           security.pam.services.runuser.startSession = true;
 
-          warnings = (optional (config.systemd.services.systemd-resolved.enable && config.wsl.wslConf.network.generateResolvConf)
-            "systemd-resolved is enabled, but resolv.conf is managed by WSL"
-          );
+          warnings = flatten [
+            (optional (config.services.resolved.enable && config.wsl.wslConf.network.generateResolvConf)
+              "systemd-resolved is enabled, but resolv.conf is managed by WSL (wsl.wslConf.network.generateResolvConf)"
+            )
+            (optional ((length config.networking.nameservers) > 0 && config.wsl.wslConf.network.generateResolvConf)
+              "custom nameservers are set (networking.nameservers), but resolv.conf is managed by WSL (wsl.wslConf.network.generateResolvConf)"
+            )
+            (optional ((length config.networking.nameservers) == 0 && !config.services.resolved.enable && !config.wsl.wslConf.network.generateResolvConf)
+              "resolv.conf generation is turned off (wsl.wslConf.network.generateResolvConf), but no other nameservers are configured (networking.nameservers)"
+            )
+          ];
         }
         (mkIf (!cfg.nativeSystemd) {
           users.users.root.shell = "${syschdemd}/bin/syschdemd";

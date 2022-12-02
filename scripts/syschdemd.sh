@@ -111,7 +111,7 @@ main() {
 
   # If we're executed from inside the container, e.g. sudo
   if is_in_container; then
-    exec $command
+    eval $command
   fi
 
   # If we are currently in /root, this is probably because the directory that WSL was started is inaccessible
@@ -134,7 +134,7 @@ main() {
     --setenv=WSLPATH="$(clean_wslpath)" \
     --working-directory="$PWD" \
     --machine=.host \
-    "$(which runuser)" -u @username@ -- /bin/sh -c "$exportCmd; source /etc/set-environment; exec $command"
+    "$(which runuser)" --pty -u @username@ -- /bin/sh -c "$exportCmd; source /etc/set-environment; exec $command"
 }
 
 main "$@"
