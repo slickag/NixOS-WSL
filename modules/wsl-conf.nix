@@ -26,14 +26,14 @@ with lib; {
       };
       options = mkOption {
         type = commas; # comma-separated strings
-        default = "metadata,uid=1000,gid=100";
+        default = "metadata,uid=1000,gid=100,umask=22,fmask=11,case=dir";
         description = "Comma-separated list of mount options that should be used for mounting windows drives.";
       };
     };
     boot = {
       command = mkOption {
         type = str;
-        default = "";
+        default = "mount --make-shared /";
         description = "A command to run when the distro is started.";
       };
       systemd = mkOption {
